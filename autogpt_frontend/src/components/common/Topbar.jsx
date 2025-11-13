@@ -4,10 +4,11 @@ import StatusPill from "./StatusPill";
 import { ThemeContext } from "../../theme/ThemeProvider";
 import "./topbar.css";
 import { useUI } from "../../state/uiStore";
+import HealthIndicator from "./HealthIndicator";
 
 /**
  * PUBLIC_INTERFACE
- * Topbar - contains theme toggle and a connection indicator using global state.
+ * Topbar - contains theme toggle and status indicators (connection and health).
  */
 export default function Topbar() {
   const { theme, resolvedTheme, toggleTheme, setTheme } = useContext(ThemeContext);
@@ -26,8 +27,9 @@ export default function Topbar() {
         <h1 className="topbar__title">Dashboard</h1>
       </div>
       <div className="topbar__right">
-        <div className="topbar__status">
+        <div className="topbar__status" style={{ display: "flex", gap: 6 }}>
           <StatusPill status={conn} label={`Connection: ${conn}`} />
+          <HealthIndicator />
         </div>
         <div className="topbar__divider" aria-hidden="true" />
         <div className="topbar__theme">

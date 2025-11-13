@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Button from "../components/common/Button";
 import { getAutoGPTApi } from "../api/autogpt";
+import { uiStore } from "../state/uiStore";
 
 /**
  * PUBLIC_INTERFACE
@@ -36,6 +37,14 @@ export default function WorkspacePage() {
         // offline fallback: just mutate UI state
       }
       setFiles((prev) => [{ path: "notes/new.txt", size: 12, modified: new Date().toISOString() }, ...prev]);
+
+      // Show a small success toast as an example of the toast API
+      uiStore.actionsFactory().pushToast({
+        type: "success",
+        title: "Upload complete",
+        message: "notes/new.txt added to workspace.",
+        timeout: 2500,
+      });
     } finally {
       setUploading(false);
     }

@@ -12,6 +12,8 @@ import SettingsPage from "./pages/SettingsPage";
 /**
  * PUBLIC_INTERFACE
  * App - Main router wiring for Tasks, Runs, Workspace, Settings and details.
+ * Note: Source maps are handled by Create React App build configuration. We do not
+ * programmatically alter source map behavior here.
  */
 function App() {
   return (

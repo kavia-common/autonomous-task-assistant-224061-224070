@@ -13,10 +13,25 @@ import { getWebSocketClient } from "../lib/wsClient";
  * - Sync theme preference with ThemeProvider
  * - Monitor WebSocket connection to update UI store
  * - Expose feature flags/experiments via settings store
+ * - Respect telemetry disabled flag (no telemetry SDK integrated)
+ *
+ * Note on source maps: CRA controls source map generation via build mode; we do not override it here.
  */
 export function AppProviders({ children }) {
   const env = getEnv();
   const log = createLogger("app:providers");
+
+  // Respect telemetry disabled flag (documented behavior; no telemetry SDK)
+  useEffect(() => {
+    try {
+      window.APP_TELEMETRY_DISABLED = !!env.NEXT_TELEMETRY_DISABLED;
+      if (window.APP_TELEMETRY_DISABLED) {
+        log.info("Telemetry disabled via REACT_APP_NEXT_TELEMETRY_DISABLED=true");
+      }
+    } catch {
+      // ignore
+    }
+  }, [env.NEXT_TELEMETRY_DISABLED]);
 
   // Initialize WS connection and connection status heartbeat
   useEffect(() => {

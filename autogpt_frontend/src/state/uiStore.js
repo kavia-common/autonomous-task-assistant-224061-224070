@@ -1,5 +1,12 @@
 import { createStore } from "./createStore";
 
+/**
+ * PUBLIC_INTERFACE
+ * uiStore - Global UI state: connection, loading, toasts.
+ * Toast API usage:
+ *   import { uiStore } from "src/state/uiStore";
+ *   uiStore.actionsFactory().pushToast({ type: "success", title: "Saved", message: "Your changes were saved." });
+ */
 const initialState = {
   connection: "unknown", // connected | disconnected | unknown | degraded
   loadingCount: 0,

@@ -65,6 +65,7 @@ export class AutoGPTApi {
   // PUBLIC_INTERFACE
   async health() {
     const env = getEnv();
+    // The health path can be configured; CRA dev proxy or absolute URL is handled by http client base URL.
     const path = env.HEALTHCHECK_PATH || "/health";
     return this.http.get(path);
   }
