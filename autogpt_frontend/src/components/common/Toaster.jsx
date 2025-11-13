@@ -1,35 +1,58 @@
-import React from "react";
-import { useUI, uiStore } from "../../state/uiStore";
+import React, { useEffect, useMemo, useState } from "react";
+import { uiStore } from "../../state/uiStore";
 
 /**
  * PUBLIC_INTERFACE
- * Toaster - Renders ephemeral toast notifications from the uiStore.
+ * Toaster - Renders ephemeral toast notifications from the uiStore singleton.
  * Usage:
  *   import { uiStore } from "src/state/uiStore";
  *   uiStore.actionsFactory().pushToast({ type: "success", title: "Saved", message: "Your changes were saved." });
  *
  * Robustness:
- * - Avoids conditional hook usage; the hook is always called.
- * - Adds null-guards and falls back to uiStore.getState() if needed.
+ * - Does not rely on external providers; subscribes directly to uiStore.
+ * - If storeRef.current is missing, logs a warning once and renders nothing (no crash).
+ * - Defaults to an empty list if state not ready.
  */
 export default function Toaster() {
-  // Always call hook unconditionally
-  const selected = useUI((s) => s);
-  // Derive toasts with a safe fallback to singleton state in case of unexpected undefined
-  const toasts = Array.isArray(selected?.toasts)
-    ? selected.toasts
-    : Array.isArray(uiStore?.getState?.().toasts)
-    ? uiStore.getState().toasts
-    : [];
+  const [toasts, setToasts] = useState(() => {
+    try {
+      const s = uiStore?.getState?.();
+      return Array.isArray(s?.toasts) ? s.toasts : [];
+    } catch {
+      return [];
+    }
+  });
 
-  // Acquire actions safely; provide noop fallback
-  let actions;
-  try {
-    actions = uiStore?.actionsFactory?.() || {};
-  } catch {
-    actions = {};
-  }
-  const removeToast = actions.removeToast || (() => {});
+  const removeToast = useMemo(() => {
+    try {
+      return uiStore?.actionsFactory?.().removeToast || (() => {});
+    } catch {
+      return () => {};
+    }
+  }, []);
+
+  useEffect(() => {
+    // Guard for early mount before storeRef.current is ready
+    if (!uiStore?.storeRef?.current) {
+      console.warn("[Toaster] uiStore not initialized yet; rendering with no toasts.");
+    }
+    try {
+      const unsub = uiStore.subscribe((next) => {
+        const list = Array.isArray(next?.toasts) ? next.toasts : [];
+        setToasts(list);
+      });
+      return () => {
+        try {
+          unsub?.();
+        } catch {
+          // ignore
+        }
+      };
+    } catch {
+      // If subscribe isn't ready, just no-op
+      return () => {};
+    }
+  }, []);
 
   const typeColors = {
     info: { bg: "rgba(59,130,246,0.15)", border: "#93C5FD", fg: "#1E3A8A" },

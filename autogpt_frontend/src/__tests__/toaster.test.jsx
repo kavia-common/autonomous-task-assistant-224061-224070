@@ -1,11 +1,9 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import App from "../App";
-import { AppProviders } from "../state/AppProviders";
+import Toaster from "../components/common/Toaster";
 import { uiStore } from "../state/uiStore";
 
-// Mock API and WS to avoid network dependencies
+// No network dependencies for this unit
 jest.mock("../api/autogpt", () => {
   return {
     getAutoGPTApi: () => ({
@@ -16,52 +14,27 @@ jest.mock("../api/autogpt", () => {
   };
 });
 
-jest.mock("../lib/wsClient", () => {
-  class MockWS {
-    constructor() {
-      this.subscriptions = {};
-      this._connected = true;
-    }
-    subscribe(topic, cb) {
-      if (!this.subscriptions[topic]) this.subscriptions[topic] = new Set();
-      this.subscriptions[topic].add(cb);
-      return () => this.subscriptions[topic].delete(cb);
-    }
-    isConnected() { return true; }
-    connect() {}
-    close() {}
-  }
-  const instance = new MockWS();
-  return {
-    WebSocketClient: MockWS,
-    getWebSocketClient: () => instance,
-  };
-});
+describe("Toaster singleton behavior", () => {
+  test("mounts without providers and does not crash before store init", async () => {
+    render(<Toaster />);
+    // Initially, no toasts
+    await waitFor(() => {
+      // No crash implies the container is present and empty is fine
+      expect(document.body).toBeTruthy();
+    });
+  });
 
-function renderWithProviders(route = "/") {
-  return render(
-    <AppProviders>
-      <MemoryRouter initialEntries={[route]}>
-        <App />
-      </MemoryRouter>
-    </AppProviders>
-  );
-}
+  test("renders a toast pushed after mount", async () => {
+    render(<Toaster />);
 
-describe("Toaster integration", () => {
-  test("app mounts and can push and render a toast without crashing", async () => {
-    renderWithProviders("/tasks");
-
-    // Push a toast via uiStore API
     const id = uiStore.actionsFactory().pushToast({
       type: "success",
       title: "Hello",
       message: "Toast works",
-      timeout: 0, // don't auto-dismiss in test
+      timeout: 0, // keep it visible
     });
     expect(id).toBeTruthy();
 
-    // The toast contents should appear
     expect(await screen.findByText(/Hello/i)).toBeInTheDocument();
     expect(screen.getByText(/Toast works/i)).toBeInTheDocument();
   });

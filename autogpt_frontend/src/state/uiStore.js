@@ -8,8 +8,8 @@ import { createStore } from "./createStore";
  *   uiStore.actionsFactory().pushToast({ type: "success", title: "Saved", message: "Your changes were saved." });
  *
  * Robustness:
- * - Guards all actions to operate even if store instance context is not ready.
- * - Logs a warning instead of throwing when called unexpectedly early.
+ * - Uses optional chaining on storeRef to avoid destructuring undefined.
+ * - Returns no-op bound actions if storeRef.current is not ready.
  */
 const initialState = {
   connection: "unknown", // connected | disconnected | unknown | degraded
@@ -19,55 +19,55 @@ const initialState = {
 
 let idSeq = 1;
 
-function actionsFactory(ctx) {
-  // Defensive: handle missing ctx
-  if (!ctx || typeof ctx.getState !== "function" || typeof ctx.setState !== "function") {
-    console.warn("[uiStore] actionsFactory invoked without a valid store context; installing no-op actions.");
-    const noop = () => {};
-    const noopReturn = (v) => v;
+function actionsFactory(ctx = {}) {
+  const ref = ctx.storeRef;
+  const safeGetState =
+    (ctx && typeof ctx.getState === "function" && ctx.getState) || (() => initialState);
+  const safeSetState =
+    (ctx && typeof ctx.setState === "function" && ctx.setState) || (() => {});
+
+  const isReady = !!ref?.current;
+
+  if (!isReady) {
+    // Provide safe no-op actions that still return ids, never throw.
+    console.warn("[uiStore] actionsFactory: storeRef.current missing, returning no-op actions.");
     return {
       // PUBLIC_INTERFACE
-      startLoading: noop,
+      startLoading: () => {},
       // PUBLIC_INTERFACE
-      stopLoading: noop,
+      stopLoading: () => {},
       // PUBLIC_INTERFACE
-      setConnection: noop,
+      setConnection: () => {},
       // PUBLIC_INTERFACE
-      pushToast: ({ type = "info", title, message, timeout = 4000 }) => {
-        // Generate an id to keep caller expectations, but do not mutate state
-        return `t_${idSeq++}`;
-      },
+      pushToast: ({ type = "info", title, message, timeout = 4000 } = {}) => `t_${idSeq++}`,
       // PUBLIC_INTERFACE
-      removeToast: noop,
+      removeToast: () => {},
     };
   }
 
-  const { getState, setState } = ctx;
-
   // PUBLIC_INTERFACE
   const startLoading = () =>
-    setState((s) => ({ ...s, loadingCount: Math.max(0, s.loadingCount + 1) }));
+    safeSetState((s) => ({ ...s, loadingCount: Math.max(0, s.loadingCount + 1) }));
 
   // PUBLIC_INTERFACE
   const stopLoading = () =>
-    setState((s) => ({ ...s, loadingCount: Math.max(0, s.loadingCount - 1) }));
+    safeSetState((s) => ({ ...s, loadingCount: Math.max(0, s.loadingCount - 1) }));
 
   // PUBLIC_INTERFACE
   const setConnection = (status) => {
-    setState((s) => ({ ...s, connection: status || "unknown" }));
+    safeSetState((s) => ({ ...s, connection: status || "unknown" }));
   };
 
   // PUBLIC_INTERFACE
   const removeToast = (id) =>
-    setState((s) => ({ ...s, toasts: s.toasts.filter((t) => t.id !== id) }));
+    safeSetState((s) => ({ ...s, toasts: s.toasts.filter((t) => t.id !== id) }));
 
   // PUBLIC_INTERFACE
-  const pushToast = ({ type = "info", title, message, timeout = 4000 }) => {
+  const pushToast = ({ type = "info", title, message, timeout = 4000 } = {}) => {
     const id = `t_${idSeq++}`;
     const toast = { id, type, title, message, timeout };
-    setState((s) => ({ ...s, toasts: [toast, ...s.toasts].slice(0, 5) }));
+    safeSetState((s) => ({ ...s, toasts: [toast, ...s.toasts].slice(0, 5) }));
     if (timeout > 0) {
-      // Use try/catch to ensure no crash on timer tick
       setTimeout(() => {
         try {
           removeToast(id);
@@ -87,4 +87,9 @@ export const uiStore = createStore(initialState, actionsFactory);
 // PUBLIC_INTERFACE
 export function useUI(selector) {
   return uiStore.useStore(selector || ((s) => s));
+}
+
+// PUBLIC_INTERFACE
+export function subscribeUI(listener) {
+  return uiStore.subscribe(listener);
 }

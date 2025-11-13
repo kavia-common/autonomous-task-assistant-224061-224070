@@ -5,26 +5,22 @@ import React, { createContext, useContext, useMemo, useReducer, useRef } from "r
  * createStore - Minimal lightweight store factory inspired by Zustand.
  * Uses React Context + useReducer internally, no external deps.
  * Provides a stable, consistent API shape:
- * { Provider, useStore, getState, setState, subscribe, actionsFactory }
+ * { Provider, useStore, getState, setState, subscribe, actionsFactory, storeRef }
  *
  * Robustness guarantees:
  * - Always returns the full API shape; never exports undefined values.
- * - actionsFactory is invoked safely; if it throws or returns a non-object,
- *   we fall back to a no-op actions object and log a console warning.
- *
- * Note:
- * - Consumers should use the exported store.useStore hook which is bound to the store's context
- *   and does not rely on any external Provider beyond the one created inside createStore. This
- *   design allows components (e.g., Toaster) to safely access store state/actions even if they
- *   are rendered outside of any additional app-level providers.
+ * - actionsFactory receives a stable storeRef so it can safely no-op if uninitialized.
+ * - Exposes a singleton-friendly storeRef { current } that always exists.
  */
 export function createStore(initialState = {}, actionsFactory = () => ({})) {
+  // Stable references that are always defined
   const listeners = new Set();
+  const storeRef = { current: null }; // will hold the public store API once Provider mounts
   const stateRef = { current: { ...initialState } };
 
   const getState = () => stateRef.current;
 
-  const setState = (partial, replace = false) => {
+  const baseSetState = (partial, replace = false) => {
     const prev = stateRef.current;
     const next = typeof partial === "function" ? partial(prev) : partial || {};
     stateRef.current = replace ? next : { ...prev, ...next };
@@ -45,13 +41,12 @@ export function createStore(initialState = {}, actionsFactory = () => ({})) {
   // Context + Provider implementation
   const StoreContext = createContext({
     getState,
-    setState,
+    setState: baseSetState,
     subscribe,
     actions: {},
   });
 
   function reducer(_, action) {
-    // Apply updates via setState; reducer just triggers rerender with token
     if (action && action.type === "__SET__") {
       return { token: {} };
     }
@@ -62,16 +57,23 @@ export function createStore(initialState = {}, actionsFactory = () => ({})) {
     const [, dispatch] = useReducer(reducer, { token: {} });
     const dispatchRef = useRef(dispatch);
 
-    // Wrap setState to trigger rerenders
     const setAndNotify = (partial, replace = false) => {
-      setState(partial, replace);
+      baseSetState(partial, replace);
       dispatchRef.current({ type: "__SET__" });
     };
 
-    // Safely build actions
+    // Safely build actions using a storeRef to avoid destructuring undefined
     const actions = useMemo(() => {
       try {
-        const a = actionsFactory({ getState, setState: setAndNotify, subscribe });
+        const ctx = {
+          // Expose accessors that are always defined
+          getState,
+          setState: setAndNotify,
+          subscribe,
+          // Also pass a storeRef for factories that prefer checking ref.current
+          storeRef,
+        };
+        const a = actionsFactory(ctx);
         if (a && typeof a === "object") return a;
         console.warn("[createStore] actionsFactory did not return an object; using no-op actions.");
         return {};
@@ -85,6 +87,9 @@ export function createStore(initialState = {}, actionsFactory = () => ({})) {
       () => ({ getState, setState: setAndNotify, subscribe, actions }),
       [actions]
     );
+
+    // Populate the public singleton ref
+    storeRef.current = value;
 
     return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
   };
@@ -113,6 +118,6 @@ export function createStore(initialState = {}, actionsFactory = () => ({})) {
     return selector(gs());
   }
 
-  // Return a consistent API; expose actionsFactory so callers can derive actions from singleton.
-  return { Provider, useStore, getState, setState, subscribe, actionsFactory };
+  // Return complete API with storeRef for singleton usage
+  return { Provider, useStore, getState, setState: baseSetState, subscribe, actionsFactory, storeRef };
 }
