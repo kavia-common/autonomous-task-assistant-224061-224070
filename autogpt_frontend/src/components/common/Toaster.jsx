@@ -7,10 +7,27 @@ import { useUI, uiStore } from "../../state/uiStore";
  * Usage:
  *   import { uiStore } from "src/state/uiStore";
  *   uiStore.actionsFactory().pushToast({ type: "success", title: "Saved", message: "Your changes were saved." });
+ *
+ * Robustness:
+ * - Avoids conditional hook usage; the hook is always called.
+ * - Adds null-guards and falls back to uiStore.getState() if needed.
  */
 export default function Toaster() {
-  const { toasts = [] } = useUI((s) => s);
-  const actions = uiStore.actionsFactory();
+  // Always call hook unconditionally
+  const selected = useUI((s) => s);
+  // Derive toasts with a safe fallback to singleton state in case of unexpected undefined
+  const toasts =
+    (selected && Array.isArray(selected.toasts) && selected.toasts) ||
+    (uiStore?.getState?.().toasts || []);
+
+  // Acquire actions safely; provide noop fallback
+  let actions;
+  try {
+    actions = uiStore?.actionsFactory?.() || {};
+  } catch {
+    actions = {};
+  }
+  const removeToast = actions.removeToast || (() => {});
 
   const typeColors = {
     info: { bg: "rgba(59,130,246,0.15)", border: "#93C5FD", fg: "#1E3A8A" },
@@ -70,7 +87,7 @@ export default function Toaster() {
               <button
                 className="button-focus-ring"
                 aria-label="Dismiss notification"
-                onClick={() => actions.removeToast(t.id)}
+                onClick={() => removeToast(t.id)}
                 style={{
                   border: "1px solid var(--border)",
                   background: "transparent",

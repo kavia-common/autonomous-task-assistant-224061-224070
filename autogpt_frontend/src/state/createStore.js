@@ -5,6 +5,12 @@ import React, { createContext, useContext, useMemo, useReducer, useRef } from "r
  * createStore - Minimal lightweight store factory inspired by Zustand.
  * Uses React Context + useReducer internally, no external deps.
  * Provides getState, setState, subscribe, and a Provider component.
+ *
+ * Note:
+ * - Consumers should use the exported store.useStore hook which is bound to the store's context
+ *   and does not rely on any external Provider beyond the one created inside createStore. This
+ *   design allows components (e.g., Toaster) to safely access store state/actions even if they
+ *   are rendered outside of any additional app-level providers.
  */
 export function createStore(initialState = {}, actionsFactory = () => ({})) {
   const listeners = new Set();

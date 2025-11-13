@@ -55,6 +55,7 @@ export default function DashboardLayout({ children }) {
           {children}
         </div>
       </main>
+      {/* Global toaster is rendered within AppProviders context; it reads uiStore safely */}
       <Toaster />
     </div>
   );
