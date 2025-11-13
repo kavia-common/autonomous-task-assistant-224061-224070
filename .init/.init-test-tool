@@ -1,0 +1,4 @@
+{
+    "command": "npm run test",
+    "working_directory": "/home/kavia/workspace/code-generation/autonomous-task-assistant-224061-224070/autogpt_frontend"
+}
