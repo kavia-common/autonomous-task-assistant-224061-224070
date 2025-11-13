@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "./layouts/DashboardLayout";
 import "./App.css";
+import { getEnv } from "./lib/env";
+import { getAutoGPTApi } from "./api/autogpt";
+import { logger as baseLogger } from "./lib/logger";
 
 /**
  * PUBLIC_INTERFACE
@@ -29,16 +32,43 @@ function Page({ title, description }) {
   );
 }
 
+function TasksPage() {
+  const [preview, setPreview] = useState(null);
+  useEffect(() => {
+    const env = getEnv();
+    const log = baseLogger;
+    log.info("Environment loaded", { api: env.API_ROOT, ws: env.WS_URL });
+
+    // Demonstrate API surface without failing the UI if backend is absent
+    const api = getAutoGPTApi();
+    api
+      .health()
+      .then((res) => {
+        setPreview({ status: res.status, data: res.data });
+      })
+      .catch(() => {
+        setPreview({ status: "unavailable" });
+      });
+  }, []);
+
+  return (
+    <div>
+      <Page title="Tasks" description="Create and manage your autonomous tasks." />
+      <div style={{ marginTop: 16, fontSize: 12, color: "var(--text-muted)" }}>
+        Health preview:{" "}
+        {preview ? (typeof preview.status === "number" ? `OK (${preview.status})` : "Unavailable") : "Checking..."}
+      </div>
+    </div>
+  );
+}
+
 // PUBLIC_INTERFACE
 function App() {
   return (
     <DashboardLayout>
       <Routes>
         <Route path="/" element={<Navigate to="/tasks" replace />} />
-        <Route
-          path="/tasks"
-          element={<Page title="Tasks" description="Create and manage your autonomous tasks." />}
-        />
+        <Route path="/tasks" element={<TasksPage />} />
         <Route
           path="/runs"
           element={<Page title="Runs" description="Track and monitor current and past runs." />}

@@ -1,8 +1,9 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import Button from "./Button";
 import StatusPill from "./StatusPill";
 import { ThemeContext } from "../../theme/ThemeProvider";
 import "./topbar.css";
+import { getWebSocketClient } from "../../lib/wsClient";
 
 /**
  * PUBLIC_INTERFACE
@@ -11,8 +12,26 @@ import "./topbar.css";
 export default function Topbar() {
   const { theme, resolvedTheme, toggleTheme, setTheme } = useContext(ThemeContext);
 
-  // Placeholder for connection state; backend not assumed yet
-  const connectionStatus = "unknown";
+  const ws = useMemo(() => getWebSocketClient(), []);
+  const [conn, setConn] = useState("unknown");
+
+  useEffect(() => {
+    const update = () => {
+      setConn(ws.isConnected() ? "connected" : "disconnected");
+    };
+    update();
+
+    const unsub = ws.subscribe("system", (msg) => {
+      // if backend emits system pings, this would keep status fresh
+      update();
+    });
+
+    const timer = setInterval(update, 2000);
+    return () => {
+      unsub?.();
+      clearInterval(timer);
+    };
+  }, [ws]);
 
   const themeLabel =
     theme === "system"
@@ -28,7 +47,7 @@ export default function Topbar() {
       </div>
       <div className="topbar__right">
         <div className="topbar__status">
-          <StatusPill status={connectionStatus} label="Connection: Unknown" />
+          <StatusPill status={conn} label={`Connection: ${conn}`} />
         </div>
         <div className="topbar__divider" aria-hidden="true" />
         <div className="topbar__theme">
