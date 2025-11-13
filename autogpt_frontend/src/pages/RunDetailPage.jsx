@@ -9,15 +9,20 @@ import { runsStore, useRuns } from "../state/runsStore";
 /**
  * PUBLIC_INTERFACE
  * RunDetailPage - Shows info for a run and a live log viewer.
+ * Adds loading and error states; degrades to demo data if backend is unavailable.
  */
 export default function RunDetailPage() {
   const { id } = useParams();
   const { runs = {} } = useRuns((s) => s);
   const run = runs[id];
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const api = getAutoGPTApi();
     if (!id) return;
+    setLoading(true);
+    setError("");
     api
       .getRun(id)
       .then((res) => runsStore.actionsFactory().upsertRun(res?.data || { id }))
@@ -32,7 +37,9 @@ export default function RunDetailPage() {
             createdAt: new Date().toISOString(),
           });
         }
-      });
+        setError("Backend unavailable, showing demo run.");
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   const statusMap = (s) => (s === "running" ? "connected" : s === "failed" ? "disconnected" : "unknown");
@@ -51,10 +58,31 @@ export default function RunDetailPage() {
         </div>
       </div>
 
+      {error ? (
+        <div
+          role="alert"
+          className="theme-surface"
+          style={{
+            marginTop: 12,
+            padding: 10,
+            borderRadius: 10,
+            borderLeft: "4px solid var(--color-warning-500)",
+            background:
+              "linear-gradient(0deg, rgba(245,158,11,0.08), rgba(245,158,11,0.08)), var(--surface)",
+            color: "var(--text)",
+            fontSize: 13,
+          }}
+        >
+          {error}
+        </div>
+      ) : null}
+
       <div className="theme-surface" style={{ marginTop: 16, padding: 12, borderRadius: 12, display: "grid", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <strong style={{ color: "var(--text)" }}>{run?.title || run?.id || id}</strong>
-          <StatusPill status={statusMap(run?.status)} label={run?.status || "unknown"} />
+          <strong style={{ color: "var(--text)" }}>
+            {loading ? "Loading..." : (run?.title || run?.id || id)}
+          </strong>
+          <StatusPill status={statusMap(run?.status)} label={run?.status || (loading ? "loading" : "unknown")} />
         </div>
         <div style={{ color: "var(--text-muted)", fontSize: 12 }}>
           Task: <code>{run?.taskId || "n/a"}</code> • Created {new Date(run?.createdAt || Date.now()).toLocaleString()}

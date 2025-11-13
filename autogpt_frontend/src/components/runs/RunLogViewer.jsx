@@ -5,6 +5,7 @@ import { useRuns, runsStore } from "../../state/runsStore";
 /**
  * PUBLIC_INTERFACE
  * RunLogViewer - Displays streaming logs for a run via WebSocket subscription.
+ * Ensures log content is safely rendered as text to prevent XSS.
  */
 export default function RunLogViewer({ runId }) {
   const { logs = {} } = useRuns((s) => s);
@@ -40,6 +41,17 @@ export default function RunLogViewer({ runId }) {
     tailRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines.length]);
 
+  // Helper to coerce any value to a safe display string
+  const toSafeString = (val) => {
+    if (val == null) return "";
+    if (typeof val === "string") return val;
+    try {
+      return JSON.stringify(val);
+    } catch {
+      return String(val);
+    }
+  };
+
   return (
     <div className="theme-surface" style={{ borderRadius: 12, padding: 12, display: "grid", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -71,8 +83,8 @@ export default function RunLogViewer({ runId }) {
           <div style={{ color: "var(--text-muted)" }}>No logs yet.</div>
         ) : (
           lines.map((l, i) => (
-            <pre key={`${i}-${l.slice(0, 20)}`} style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-              {l}
+            <pre key={`${i}-${toSafeString(l).slice(0, 20)}`} style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+              {toSafeString(l)}
             </pre>
           ))
         )}

@@ -6,17 +6,21 @@ import { getEnv } from "../lib/env";
 import { getAutoGPTApi } from "../api/autogpt";
 import { createLogger } from "../lib/logger";
 import { useTasks, tasksStore } from "../state/tasksStore";
+import { uiStore } from "../state/uiStore";
 
 const log = createLogger("ui:tasks");
 
 /**
  * PUBLIC_INTERFACE
  * TasksPage - Lists tasks and provides navigation to create a new task.
+ * Adds loading/error/empty states and degrades gracefully if backend is unavailable.
  */
 export default function TasksPage() {
   const navigate = useNavigate();
   const env = useMemo(() => getEnv(), []);
   const [health, setHealth] = useState("Checking...");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const { tasks = [] } = useTasks((s) => s);
 
   useEffect(() => {
@@ -24,25 +28,43 @@ export default function TasksPage() {
     api
       .health()
       .then((res) => setHealth(typeof res.status === "number" ? `OK (${res.status})` : "OK"))
-      .catch(() => setHealth("Unavailable"));
+      .catch(() => {
+        setHealth("Unavailable");
+        uiStore.actionsFactory().pushToast({
+          type: "warning",
+          title: "Backend health check failed",
+          message: "Operating in demo mode until backend is reachable.",
+          timeout: 3500,
+        });
+      });
   }, []);
 
   // Try to fetch tasks from API, but don't error if backend is absent
   useEffect(() => {
     const api = getAutoGPTApi();
+    const actions = uiStore.actionsFactory();
+    setLoading(true);
+    setError("");
+    actions.startLoading();
     api
       .listTasks()
       .then((res) => {
         const list = Array.isArray(res?.data) ? res.data : (res?.data?.items || []);
         tasksStore.actionsFactory().setTasks(list);
       })
-      .catch(() => {
+      .catch((e) => {
         // Populate demo tasks as placeholder
+        setError("Backend unavailable, showing demo tasks.");
         const demo = [
           { id: "t1", name: "Research competitor landscape", status: "idle", createdAt: new Date().toISOString() },
           { id: "t2", name: "Summarize weekly reports", status: "idle", createdAt: new Date().toISOString() },
         ];
         tasksStore.actionsFactory().setTasks(demo);
+        log.warn("Tasks fetch failed, seeded demo", e ? { status: e.status } : undefined);
+      })
+      .finally(() => {
+        setLoading(false);
+        actions.stopLoading();
       });
   }, []);
 
@@ -66,8 +88,31 @@ export default function TasksPage() {
         <span>Flags: {Object.keys(env.FEATURE_FLAGS || {}).length}</span>
       </div>
 
+      {error ? (
+        <div
+          role="alert"
+          className="theme-surface"
+          style={{
+            marginTop: 12,
+            padding: 10,
+            borderRadius: 10,
+            borderLeft: "4px solid var(--color-warning-500)",
+            background:
+              "linear-gradient(0deg, rgba(245,158,11,0.08), rgba(245,158,11,0.08)), var(--surface)",
+            color: "var(--text)",
+            fontSize: 13,
+          }}
+        >
+          {error}
+        </div>
+      ) : null}
+
       <div style={{ marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-        {tasks.length === 0 ? (
+        {loading ? (
+          <div className="theme-surface-muted" style={{ padding: 16, fontSize: 14, color: "var(--text-muted)" }}>
+            Loading tasks...
+          </div>
+        ) : tasks.length === 0 ? (
           <div className="theme-surface-muted" style={{ padding: 16, fontSize: 14, color: "var(--text-muted)" }}>
             No tasks yet. Click "New Task" to create your first task.
           </div>

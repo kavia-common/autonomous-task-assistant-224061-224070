@@ -4,16 +4,25 @@ import Button from "../components/common/Button";
 import StatusPill from "../components/common/StatusPill";
 import { getAutoGPTApi } from "../api/autogpt";
 import { runsStore, useRuns } from "../state/runsStore";
-import { tasksStore } from "../state/tasksStore";
+import { uiStore } from "../state/uiStore";
 
 /**
  * PUBLIC_INTERFACE
  * RunsPage - Lists runs with status. Works without backend by seeding demo runs.
+ * Includes loading and error feedback with graceful fallbacks.
  */
 export default function RunsPage() {
   const { runs = {} } = useRuns((s) => s);
-  const runList = useMemo(() => Object.values(runs || {}).sort((a, b) => (b?.createdAt || 0).localeCompare?.(a?.createdAt || 0) || 0), [runs]);
+  const runList = useMemo(
+    () =>
+      Object.values(runs || {}).sort(
+        (a, b) => (b?.createdAt || 0).localeCompare?.(a?.createdAt || 0) || 0
+      ),
+    [runs]
+  );
   const location = useLocation();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // Optional: filter by task id via ?task=<id>
   const params = new URLSearchParams(location.search);
@@ -21,6 +30,10 @@ export default function RunsPage() {
 
   useEffect(() => {
     const api = getAutoGPTApi();
+    const actions = uiStore.actionsFactory();
+    setLoading(true);
+    setError("");
+    actions.startLoading();
     api
       .listRuns()
       .then((res) => {
@@ -29,12 +42,17 @@ export default function RunsPage() {
       })
       .catch(() => {
         // Seed demo runs as placeholder
+        setError("Backend unavailable, showing demo runs.");
         const now = new Date().toISOString();
         const demo = [
           { id: "r1", taskId: "t1", status: "running", createdAt: now, title: "Run t1 - A" },
           { id: "r2", taskId: "t2", status: "completed", createdAt: now, title: "Run t2 - B" },
         ];
         demo.forEach((r) => runsStore.actionsFactory().upsertRun(r));
+      })
+      .finally(() => {
+        setLoading(false);
+        actions.stopLoading();
       });
   }, []);
 
@@ -54,8 +72,31 @@ export default function RunsPage() {
         </div>
       ) : null}
 
+      {error ? (
+        <div
+          role="alert"
+          className="theme-surface"
+          style={{
+            marginTop: 12,
+            padding: 10,
+            borderRadius: 10,
+            borderLeft: "4px solid var(--color-warning-500)",
+            background:
+              "linear-gradient(0deg, rgba(245,158,11,0.08), rgba(245,158,11,0.08)), var(--surface)",
+            color: "var(--text)",
+            fontSize: 13,
+          }}
+        >
+          {error}
+        </div>
+      ) : null}
+
       <div style={{ marginTop: 16 }}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="theme-surface-muted" style={{ padding: 16, fontSize: 14, color: "var(--text-muted)" }}>
+            Loading runs...
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="theme-surface-muted" style={{ padding: 16, fontSize: 14, color: "var(--text-muted)" }}>
             No runs available yet. Start a run from a task.
           </div>

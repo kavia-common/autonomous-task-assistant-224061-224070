@@ -10,6 +10,7 @@ const log = createLogger("ui:task-create");
 /**
  * PUBLIC_INTERFACE
  * TaskCreatePage - Minimal form to create a new task; works offline with local state.
+ * Adds input validation for length and allowed characters.
  */
 export default function TaskCreatePage() {
   const navigate = useNavigate();
@@ -18,19 +19,31 @@ export default function TaskCreatePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  const DISALLOWED = /[<>]/; // basic guard against angle brackets
+  const MAX_NAME = 100;
+  const MAX_GOAL = 5000;
+
+  const validate = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return "Task name is required.";
+    if (DISALLOWED.test(trimmed)) return "Task name contains disallowed characters.";
+    if (trimmed.length > MAX_NAME) return `Task name must be ≤ ${MAX_NAME} characters.`;
+    if (goal && goal.length > MAX_GOAL) return `Goal is too long (max ${MAX_GOAL} characters).`;
+    return "";
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    if (!name.trim()) {
-      setError("Task name is required.");
-      return;
-    }
+    const v = validate();
+    setError(v);
+    if (v) return;
+
     setSubmitting(true);
 
     const api = getAutoGPTApi();
     try {
       // Try backend create, fall back to local
-      const payload = { name, goal };
+      const payload = { name: name.trim(), goal };
       let created = null;
       try {
         const res = await api.createTask(payload);
@@ -39,8 +52,8 @@ export default function TaskCreatePage() {
         // Offline/local placeholder
         created = {
           id: `t_${Date.now()}`,
-          name,
-          goal,
+          name: payload.name,
+          goal: payload.goal,
           status: "idle",
           createdAt: new Date().toISOString(),
         };
@@ -51,6 +64,9 @@ export default function TaskCreatePage() {
       setSubmitting(false);
     }
   };
+
+  const nameHelp = `Max ${MAX_NAME} chars. Disallowed: < >`;
+  const currentInvalid = error ? true : false;
 
   return (
     <div>
@@ -68,6 +84,9 @@ export default function TaskCreatePage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="E.g., Draft market analysis for Q2"
+            aria-invalid={currentInvalid}
+            aria-describedby="task_name_help"
+            maxLength={MAX_NAME + 10}
             style={{
               width: "100%",
               padding: "10px 12px",
@@ -78,6 +97,9 @@ export default function TaskCreatePage() {
               transition: "box-shadow var(--transition-fast), border-color var(--transition-fast)"
             }}
           />
+          <div id="task_name_help" style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 4 }}>
+            {nameHelp}
+          </div>
         </div>
 
         <div>
@@ -91,6 +113,7 @@ export default function TaskCreatePage() {
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
             placeholder="Describe the goal and constraints..."
+            maxLength={MAX_GOAL + 200}
             style={{
               width: "100%",
               padding: "10px 12px",
@@ -102,6 +125,9 @@ export default function TaskCreatePage() {
               transition: "box-shadow var(--transition-fast), border-color var(--transition-fast)"
             }}
           />
+          <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 4 }}>
+            Optional. Up to {MAX_GOAL.toLocaleString()} characters.
+          </div>
         </div>
 
         {error ? (
