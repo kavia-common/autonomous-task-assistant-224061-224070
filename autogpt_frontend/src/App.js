@@ -1,91 +1,38 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "./layouts/DashboardLayout";
 import "./App.css";
-import { getEnv } from "./lib/env";
-import { getAutoGPTApi } from "./api/autogpt";
-import { logger as baseLogger } from "./lib/logger";
+import TasksPage from "./pages/TasksPage";
+import TaskCreatePage from "./pages/TaskCreatePage";
+import RunsPage from "./pages/RunsPage";
+import RunDetailPage from "./pages/RunDetailPage";
+import WorkspacePage from "./pages/WorkspacePage";
+import SettingsPage from "./pages/SettingsPage";
 
 /**
  * PUBLIC_INTERFACE
- * Basic routed pages as placeholders: Tasks, Runs, Workspace, Settings.
+ * App - Main router wiring for Tasks, Runs, Workspace, Settings and details.
  */
-function Page({ title, description }) {
-  return (
-    <div>
-      <h2 style={{ marginTop: 0 }}>{title}</h2>
-      <p style={{ color: "var(--text-muted)" }}>{description}</p>
-      <div
-        style={{
-          marginTop: 16,
-          padding: 12,
-          borderRadius: 10,
-          border: "1px dashed var(--border)",
-          background: "var(--surface-2)",
-          color: "var(--text-muted)",
-          fontSize: 14,
-        }}
-      >
-        Placeholder: No backend connected yet.
-      </div>
-    </div>
-  );
-}
-
-function TasksPage() {
-  const [preview, setPreview] = useState(null);
-  const env = useMemo(() => getEnv(), []);
-  useEffect(() => {
-    const log = baseLogger;
-    log.info("Environment loaded", { api: env.API_ROOT, ws: env.WS_URL });
-
-    // Demonstrate API surface without failing the UI if backend is absent
-    const api = getAutoGPTApi();
-    api
-      .health()
-      .then((res) => {
-        setPreview({ status: res.status, data: res.data });
-      })
-      .catch(() => {
-        setPreview({ status: "unavailable" });
-      });
-  }, [env]);
-
-  return (
-    <div>
-      <Page title="Tasks" description="Create and manage your autonomous tasks." />
-      <div style={{ marginTop: 16, fontSize: 12, color: "var(--text-muted)" }}>
-        Health preview:{" "}
-        {preview ? (typeof preview.status === "number" ? `OK (${preview.status})` : "Unavailable") : "Checking..."}
-      </div>
-      <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
-        Experiments: {env.EXPERIMENTS_ENABLED ? "Enabled" : "Disabled"} | Flags:{" "}
-        {Object.keys(env.FEATURE_FLAGS || {}).length}
-      </div>
-    </div>
-  );
-}
-
-// PUBLIC_INTERFACE
 function App() {
   return (
     <DashboardLayout>
       <Routes>
         <Route path="/" element={<Navigate to="/tasks" replace />} />
         <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/tasks/create" element={<TaskCreatePage />} />
+        <Route path="/runs" element={<RunsPage />} />
+        <Route path="/runs/:id" element={<RunDetailPage />} />
+        <Route path="/workspace" element={<WorkspacePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route
-          path="/runs"
-          element={<Page title="Runs" description="Track and monitor current and past runs." />}
+          path="*"
+          element={
+            <div>
+              <h2 style={{ marginTop: 0 }}>Not Found</h2>
+              <p style={{ color: "var(--text-muted)" }}>Page not found.</p>
+            </div>
+          }
         />
-        <Route
-          path="/workspace"
-          element={<Page title="Workspace" description="Manage files and context for runs." />}
-        />
-        <Route
-          path="/settings"
-          element={<Page title="Settings" description="Configure preferences and integrations." />}
-        />
-        <Route path="*" element={<Page title="Not Found" description="Page not found." />} />
       </Routes>
     </DashboardLayout>
   );
