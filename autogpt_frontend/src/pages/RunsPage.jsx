@@ -56,16 +56,7 @@ export default function RunsPage() {
 
       <div style={{ marginTop: 16 }}>
         {filtered.length === 0 ? (
-          <div
-            style={{
-              padding: 16,
-              borderRadius: 10,
-              border: "1px dashed var(--border)",
-              background: "var(--surface-2)",
-              color: "var(--text-muted)",
-              fontSize: 14,
-            }}
-          >
+          <div className="theme-surface-muted" style={{ padding: 16, fontSize: 14, color: "var(--text-muted)" }}>
             No runs available yet. Start a run from a task.
           </div>
         ) : (

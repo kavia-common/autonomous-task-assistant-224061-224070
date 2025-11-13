@@ -27,3 +27,8 @@ hr {
   border-top: 1px solid var(--border);
   margin: 16px 0;
 }
+
+/* Optional: apply background helper if used */
+.app-bg {
+  background: var(--gradient-surface), var(--bg);
+}

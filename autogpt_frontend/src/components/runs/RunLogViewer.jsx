@@ -44,7 +44,12 @@ export default function RunLogViewer({ runId }) {
     <div className="theme-surface" style={{ borderRadius: 12, padding: 12, display: "grid", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <strong>Logs</strong>
-        <Button variant="ghost" size="sm" onClick={() => runsStore.actionsFactory().clearLogs(runId)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          ariaLabel="Clear logs"
+          onClick={() => runsStore.actionsFactory().clearLogs(runId)}
+        >
           Clear
         </Button>
       </div>
@@ -57,7 +62,7 @@ export default function RunLogViewer({ runId }) {
           border: "1px solid var(--border)",
           borderRadius: 10,
           padding: 10,
-          height: 260,
+          height: 280,
           overflow: "auto",
         }}
         aria-live="polite"

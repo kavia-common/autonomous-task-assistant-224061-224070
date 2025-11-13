@@ -48,7 +48,7 @@ export default function SettingsPage() {
         <div>
           <strong>Feature Flags</strong>
           {Object.keys(featureFlags || {}).length === 0 ? (
-            <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 6 }}>
+            <div className="theme-surface-muted" style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 6, padding: 10 }}>
               No feature flags set.
             </div>
           ) : (

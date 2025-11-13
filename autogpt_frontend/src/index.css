@@ -25,6 +25,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Root gradient background for the app shell */
+#root {
+  background: var(--gradient-surface), var(--bg);
+}
+
 a {
   color: var(--color-primary);
 }

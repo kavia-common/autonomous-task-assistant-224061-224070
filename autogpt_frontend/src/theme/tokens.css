@@ -1,36 +1,61 @@
 :root {
   /* Ocean Professional - Light */
-  --color-primary: #2563EB; /* blue-600 */
-  --color-primary-600: #2563EB;
+  /* Core brand */
+  --color-primary-700: #1D4ED8;
+  --color-primary-600: #2563EB; /* base */
   --color-primary-500: #3B82F6;
-  --color-secondary: #F59E0B; /* amber-500 */
-  --color-success: #10B981; /* emerald-500 */
-  --color-error: #EF4444; /* red-500 */
-  --color-warning: #F59E0B;
-  --color-info: #0EA5E9; /* sky-500 */
+  --color-primary-400: #60A5FA;
+  --color-primary: var(--color-primary-600);
 
-  --bg: #f9fafb;          /* background */
-  --surface: #ffffff;     /* cards, panels */
-  --surface-2: #f3f4f6;   /* muted surface */
+  --color-secondary-600: #D97706;
+  --color-secondary-500: #F59E0B; /* amber */
+  --color-secondary-400: #FDBA74;
+  --color-secondary: var(--color-secondary-500);
+
+  /* Semantic */
+  --color-success-600: #059669;
+  --color-success-500: #10B981;
+  --color-error-600: #DC2626;
+  --color-error-500: #EF4444;
+  --color-warning-600: #D97706;
+  --color-warning-500: #F59E0B;
+  --color-info-600: #0284C7;
+  --color-info-500: #0EA5E9;
+
+  /* Surfaces and text */
+  --bg: #f9fafb;          /* app background */
+  --surface: #ffffff;     /* foreground surface */
+  --surface-2: #f3f4f6;   /* muted/kind surface */
+  --surface-3: #eef2ff;   /* subtle tinted surface */
   --text: #111827;        /* gray-900 */
   --text-muted: #6B7280;  /* gray-500 */
+  --text-inverse: #ffffff;
   --border: #E5E7EB;      /* gray-200 */
-  --ring: rgba(37, 99, 235, 0.4);
+  --border-strong: #D1D5DB; /* gray-300 */
+  --ring: rgba(37, 99, 235, 0.5);
 
+  /* Sidebar */
   --sidebar-bg: #0b1220;  /* deep navy */
   --sidebar-text: #c9d3e7;
   --sidebar-active-bg: rgba(59, 130, 246, 0.16);
   --sidebar-active-text: #E5EEFF;
 
+  /* Radii, shadows, transitions */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-xs: 0 1px 1px rgba(2, 6, 23, 0.06);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
   --shadow-md: 0 6px 18px rgba(2, 6, 23, 0.08);
   --shadow-lg: 0 20px 40px rgba(2, 6, 23, 0.12);
 
   --transition-fast: 150ms ease;
   --transition-medium: 250ms ease;
+
+  /* Gradients */
+  --gradient-surface: linear-gradient(180deg, rgba(59,130,246,0.06), rgba(15,23,42,0) 240px);
+  --gradient-accent: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(245,158,11,0.10));
 }
 
 [data-theme="dark"] {
@@ -38,10 +63,13 @@
   --bg: #0b1020;
   --surface: #0f172a;     /* slate-900 */
   --surface-2: #0b1325;
+  --surface-3: #0b1120;
   --text: #E5E7EB;
   --text-muted: #9CA3AF;
+  --text-inverse: #0f172a;
   --border: #1f2937;
-  --ring: rgba(59, 130, 246, 0.45);
+  --border-strong: #334155;
+  --ring: rgba(59, 130, 246, 0.55);
 
   --sidebar-bg: #060a12;
   --sidebar-text: #B6C3E0;
@@ -49,7 +77,14 @@
   --sidebar-active-text: #ffffff;
 }
 
-/* Utilities */
+/* Application background helper */
+.app-bg {
+  background:
+    var(--gradient-surface),
+    var(--bg);
+}
+
+/* Cards and panels */
 .theme-surface {
   background: var(--surface);
   color: var(--text);
@@ -58,16 +93,51 @@
   box-shadow: var(--shadow-sm);
 }
 
-.theme-outline:focus {
+/* Muted surface (e.g. empty states) */
+.theme-surface-muted {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+
+/* Focus ring helper for interactive elements */
+.theme-outline:focus,
+.theme-outline:focus-visible,
+.button-focus-ring:focus,
+.button-focus-ring:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--ring);
 }
 
+/* Link styling */
 a {
   color: var(--color-primary-600);
   text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 a:hover {
   text-decoration: underline;
+}
+
+/* Accessible hidden class for screen-reader only content */
+.sr-only {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap; /* added line */
+}
+
+/* List / table row hover helpers */
+.row-hover:hover {
+  background: rgba(59,130,246,0.05);
+}
+
+/* Divider utility */
+.divider {
+  height: 1px;
+  background: var(--border);
+  width: 100%;
 }

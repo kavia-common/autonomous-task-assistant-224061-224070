@@ -71,10 +71,11 @@ export default function TaskCreatePage() {
             style={{
               width: "100%",
               padding: "10px 12px",
-              borderRadius: 10,
+              borderRadius: "10px",
               border: "1px solid var(--border)",
               background: "var(--surface)",
               color: "var(--text)",
+              transition: "box-shadow var(--transition-fast), border-color var(--transition-fast)"
             }}
           />
         </div>
@@ -93,11 +94,12 @@ export default function TaskCreatePage() {
             style={{
               width: "100%",
               padding: "10px 12px",
-              borderRadius: 10,
+              borderRadius: "10px",
               border: "1px solid var(--border)",
               background: "var(--surface)",
               color: "var(--text)",
               resize: "vertical",
+              transition: "box-shadow var(--transition-fast), border-color var(--transition-fast)"
             }}
           />
         </div>

@@ -68,16 +68,7 @@ export default function TasksPage() {
 
       <div style={{ marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
         {tasks.length === 0 ? (
-          <div
-            style={{
-              padding: 16,
-              borderRadius: 10,
-              border: "1px dashed var(--border)",
-              background: "var(--surface-2)",
-              color: "var(--text-muted)",
-              fontSize: 14,
-            }}
-          >
+          <div className="theme-surface-muted" style={{ padding: 16, fontSize: 14, color: "var(--text-muted)" }}>
             No tasks yet. Click "New Task" to create your first task.
           </div>
         ) : (
