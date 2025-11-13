@@ -6,6 +6,10 @@ import { createStore } from "./createStore";
  * Toast API usage:
  *   import { uiStore } from "src/state/uiStore";
  *   uiStore.actionsFactory().pushToast({ type: "success", title: "Saved", message: "Your changes were saved." });
+ *
+ * Robustness:
+ * - Guards all actions to operate even if store instance context is not ready.
+ * - Logs a warning instead of throwing when called unexpectedly early.
  */
 const initialState = {
   connection: "unknown", // connected | disconnected | unknown | degraded
@@ -15,7 +19,31 @@ const initialState = {
 
 let idSeq = 1;
 
-function actionsFactory({ getState, setState }) {
+function actionsFactory(ctx) {
+  // Defensive: handle missing ctx
+  if (!ctx || typeof ctx.getState !== "function" || typeof ctx.setState !== "function") {
+    console.warn("[uiStore] actionsFactory invoked without a valid store context; installing no-op actions.");
+    const noop = () => {};
+    const noopReturn = (v) => v;
+    return {
+      // PUBLIC_INTERFACE
+      startLoading: noop,
+      // PUBLIC_INTERFACE
+      stopLoading: noop,
+      // PUBLIC_INTERFACE
+      setConnection: noop,
+      // PUBLIC_INTERFACE
+      pushToast: ({ type = "info", title, message, timeout = 4000 }) => {
+        // Generate an id to keep caller expectations, but do not mutate state
+        return `t_${idSeq++}`;
+      },
+      // PUBLIC_INTERFACE
+      removeToast: noop,
+    };
+  }
+
+  const { getState, setState } = ctx;
+
   // PUBLIC_INTERFACE
   const startLoading = () =>
     setState((s) => ({ ...s, loadingCount: Math.max(0, s.loadingCount + 1) }));
@@ -30,19 +58,26 @@ function actionsFactory({ getState, setState }) {
   };
 
   // PUBLIC_INTERFACE
+  const removeToast = (id) =>
+    setState((s) => ({ ...s, toasts: s.toasts.filter((t) => t.id !== id) }));
+
+  // PUBLIC_INTERFACE
   const pushToast = ({ type = "info", title, message, timeout = 4000 }) => {
     const id = `t_${idSeq++}`;
     const toast = { id, type, title, message, timeout };
     setState((s) => ({ ...s, toasts: [toast, ...s.toasts].slice(0, 5) }));
     if (timeout > 0) {
-      setTimeout(() => removeToast(id), timeout + 50);
+      // Use try/catch to ensure no crash on timer tick
+      setTimeout(() => {
+        try {
+          removeToast(id);
+        } catch {
+          // ignore
+        }
+      }, timeout + 50);
     }
     return id;
   };
-
-  // PUBLIC_INTERFACE
-  const removeToast = (id) =>
-    setState((s) => ({ ...s, toasts: s.toasts.filter((t) => t.id !== id) }));
 
   return { startLoading, stopLoading, setConnection, pushToast, removeToast };
 }

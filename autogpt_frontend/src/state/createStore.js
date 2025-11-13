@@ -4,7 +4,13 @@ import React, { createContext, useContext, useMemo, useReducer, useRef } from "r
  * PUBLIC_INTERFACE
  * createStore - Minimal lightweight store factory inspired by Zustand.
  * Uses React Context + useReducer internally, no external deps.
- * Provides getState, setState, subscribe, and a Provider component.
+ * Provides a stable, consistent API shape:
+ * { Provider, useStore, getState, setState, subscribe, actionsFactory }
+ *
+ * Robustness guarantees:
+ * - Always returns the full API shape; never exports undefined values.
+ * - actionsFactory is invoked safely; if it throws or returns a non-object,
+ *   we fall back to a no-op actions object and log a console warning.
  *
  * Note:
  * - Consumers should use the exported store.useStore hook which is bound to the store's context
@@ -20,8 +26,7 @@ export function createStore(initialState = {}, actionsFactory = () => ({})) {
 
   const setState = (partial, replace = false) => {
     const prev = stateRef.current;
-    const next =
-      typeof partial === "function" ? partial(prev) : partial || {};
+    const next = typeof partial === "function" ? partial(prev) : partial || {};
     stateRef.current = replace ? next : { ...prev, ...next };
     for (const l of listeners) {
       try {
@@ -46,7 +51,7 @@ export function createStore(initialState = {}, actionsFactory = () => ({})) {
   });
 
   function reducer(_, action) {
-    // we apply updates via setState; reducer just triggers rerender with token
+    // Apply updates via setState; reducer just triggers rerender with token
     if (action && action.type === "__SET__") {
       return { token: {} };
     }
@@ -63,40 +68,51 @@ export function createStore(initialState = {}, actionsFactory = () => ({})) {
       dispatchRef.current({ type: "__SET__" });
     };
 
-    const actions = useMemo(
-      () => actionsFactory({ getState, setState: setAndNotify, subscribe }),
-      []
-    );
+    // Safely build actions
+    const actions = useMemo(() => {
+      try {
+        const a = actionsFactory({ getState, setState: setAndNotify, subscribe });
+        if (a && typeof a === "object") return a;
+        console.warn("[createStore] actionsFactory did not return an object; using no-op actions.");
+        return {};
+      } catch (e) {
+        console.warn("[createStore] actionsFactory threw; using no-op actions.");
+        return {};
+      }
+    }, []);
 
     const value = useMemo(
       () => ({ getState, setState: setAndNotify, subscribe, actions }),
       [actions]
     );
 
-    return (
-      <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
-    );
+    return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
   };
 
   // PUBLIC_INTERFACE
+  /**
+   * useStore - Hook to select from the store state with subscription.
+   * Always available and never throws due to missing context; backed by internal context.
+   */
   function useStore(selector = (s) => s, equalityFn = Object.is) {
-    const ctx = useContext(StoreContext);
-    const { getState, subscribe } = ctx;
-    const selectedRef = useRef(selector(getState()));
+    const ctx = useContext(StoreContext) || { getState, subscribe };
+    const { getState: gs, subscribe: sub } = ctx;
+    const selectedRef = useRef(selector(gs()));
     const [, rerender] = useReducer((c) => c + 1, 0);
 
     React.useEffect(() => {
-      return subscribe((next) => {
+      return sub((next) => {
         const selectedNext = selector(next);
         if (!equalityFn(selectedNext, selectedRef.current)) {
           selectedRef.current = selectedNext;
           rerender();
         }
       });
-    }, [subscribe, selector, equalityFn]);
+    }, [sub, selector, equalityFn]);
 
-    return selector(getState());
+    return selector(gs());
   }
 
+  // Return a consistent API; expose actionsFactory so callers can derive actions from singleton.
   return { Provider, useStore, getState, setState, subscribe, actionsFactory };
 }

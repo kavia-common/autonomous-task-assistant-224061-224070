@@ -16,9 +16,11 @@ export default function Toaster() {
   // Always call hook unconditionally
   const selected = useUI((s) => s);
   // Derive toasts with a safe fallback to singleton state in case of unexpected undefined
-  const toasts =
-    (selected && Array.isArray(selected.toasts) && selected.toasts) ||
-    (uiStore?.getState?.().toasts || []);
+  const toasts = Array.isArray(selected?.toasts)
+    ? selected.toasts
+    : Array.isArray(uiStore?.getState?.().toasts)
+    ? uiStore.getState().toasts
+    : [];
 
   // Acquire actions safely; provide noop fallback
   let actions;
