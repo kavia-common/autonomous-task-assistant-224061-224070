@@ -1,0 +1,45 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.topbar__title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar__status {
+  display: flex;
+  align-items: center;
+}
+
+.topbar__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  margin: 0 8px;
+}
+
+.topbar__theme {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topbar__theme-menu {
+  display: flex;
+  gap: 4px;
+}

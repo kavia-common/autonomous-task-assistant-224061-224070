@@ -1,0 +1,40 @@
+.btn {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  color: white;
+  background: var(--color-primary);
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--color-secondary);
+  color: #0b1020;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-sm { padding: 0.4rem 0.7rem; font-size: 0.85rem; }
+.btn-md { padding: 0.6rem 1rem; font-size: 0.95rem; }
+.btn-lg { padding: 0.8rem 1.2rem; font-size: 1.05rem; }

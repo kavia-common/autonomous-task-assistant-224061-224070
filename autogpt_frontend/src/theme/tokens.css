@@ -1,0 +1,73 @@
+:root {
+  /* Ocean Professional - Light */
+  --color-primary: #2563EB; /* blue-600 */
+  --color-primary-600: #2563EB;
+  --color-primary-500: #3B82F6;
+  --color-secondary: #F59E0B; /* amber-500 */
+  --color-success: #10B981; /* emerald-500 */
+  --color-error: #EF4444; /* red-500 */
+  --color-warning: #F59E0B;
+  --color-info: #0EA5E9; /* sky-500 */
+
+  --bg: #f9fafb;          /* background */
+  --surface: #ffffff;     /* cards, panels */
+  --surface-2: #f3f4f6;   /* muted surface */
+  --text: #111827;        /* gray-900 */
+  --text-muted: #6B7280;  /* gray-500 */
+  --border: #E5E7EB;      /* gray-200 */
+  --ring: rgba(37, 99, 235, 0.4);
+
+  --sidebar-bg: #0b1220;  /* deep navy */
+  --sidebar-text: #c9d3e7;
+  --sidebar-active-bg: rgba(59, 130, 246, 0.16);
+  --sidebar-active-text: #E5EEFF;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 6px 18px rgba(2, 6, 23, 0.08);
+  --shadow-lg: 0 20px 40px rgba(2, 6, 23, 0.12);
+
+  --transition-fast: 150ms ease;
+  --transition-medium: 250ms ease;
+}
+
+[data-theme="dark"] {
+  /* Ocean Professional - Dark */
+  --bg: #0b1020;
+  --surface: #0f172a;     /* slate-900 */
+  --surface-2: #0b1325;
+  --text: #E5E7EB;
+  --text-muted: #9CA3AF;
+  --border: #1f2937;
+  --ring: rgba(59, 130, 246, 0.45);
+
+  --sidebar-bg: #060a12;
+  --sidebar-text: #B6C3E0;
+  --sidebar-active-bg: rgba(59, 130, 246, 0.22);
+  --sidebar-active-text: #ffffff;
+}
+
+/* Utilities */
+.theme-surface {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-outline:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+a {
+  color: var(--color-primary-600);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}

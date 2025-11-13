@@ -1,48 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import DashboardLayout from "./layouts/DashboardLayout";
+import "./App.css";
+
+/**
+ * PUBLIC_INTERFACE
+ * Basic routed pages as placeholders: Tasks, Runs, Workspace, Settings.
+ */
+function Page({ title, description }) {
+  return (
+    <div>
+      <h2 style={{ marginTop: 0 }}>{title}</h2>
+      <p style={{ color: "var(--text-muted)" }}>{description}</p>
+      <div
+        style={{
+          marginTop: 16,
+          padding: 12,
+          borderRadius: 10,
+          border: "1px dashed var(--border)",
+          background: "var(--surface-2)",
+          color: "var(--text-muted)",
+          fontSize: 14,
+        }}
+      >
+        Placeholder: No backend connected yet.
+      </div>
+    </div>
+  );
+}
 
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
-
-  // Effect to apply theme to document element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <DashboardLayout>
+      <Routes>
+        <Route path="/" element={<Navigate to="/tasks" replace />} />
+        <Route
+          path="/tasks"
+          element={<Page title="Tasks" description="Create and manage your autonomous tasks." />}
+        />
+        <Route
+          path="/runs"
+          element={<Page title="Runs" description="Track and monitor current and past runs." />}
+        />
+        <Route
+          path="/workspace"
+          element={<Page title="Workspace" description="Manage files and context for runs." />}
+        />
+        <Route
+          path="/settings"
+          element={<Page title="Settings" description="Configure preferences and integrations." />}
+        />
+        <Route path="*" element={<Page title="Not Found" description="Page not found." />} />
+      </Routes>
+    </DashboardLayout>
   );
 }
 
