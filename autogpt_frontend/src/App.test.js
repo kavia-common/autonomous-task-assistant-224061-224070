@@ -1,16 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
-import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from './theme/ThemeProvider';
+import { MemoryRouter } from 'react-router-dom';
+import { AppProviders } from './state/AppProviders';
 
-test('renders Tasks page placeholder by default', () => {
+// Keep this as a light smoke test to ensure App renders with providers.
+test('renders Tasks page placeholder by default', async () => {
   render(
-    <ThemeProvider>
-      <BrowserRouter>
+    <AppProviders>
+      <MemoryRouter initialEntries={["/"]}>
         <App />
-      </BrowserRouter>
-    </ThemeProvider>
+      </MemoryRouter>
+    </AppProviders>
   );
-  const heading = screen.getByText(/Tasks/i);
+  const heading = await screen.findByText(/Tasks/i);
   expect(heading).toBeInTheDocument();
 });
