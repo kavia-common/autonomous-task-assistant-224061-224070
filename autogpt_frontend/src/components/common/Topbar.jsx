@@ -1,37 +1,17 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useMemo } from "react";
 import Button from "./Button";
 import StatusPill from "./StatusPill";
 import { ThemeContext } from "../../theme/ThemeProvider";
 import "./topbar.css";
-import { getWebSocketClient } from "../../lib/wsClient";
+import { useUI } from "../../state/uiStore";
 
 /**
  * PUBLIC_INTERFACE
- * Topbar - contains theme toggle and a connection indicator placeholder.
+ * Topbar - contains theme toggle and a connection indicator using global state.
  */
 export default function Topbar() {
   const { theme, resolvedTheme, toggleTheme, setTheme } = useContext(ThemeContext);
-
-  const ws = useMemo(() => getWebSocketClient(), []);
-  const [conn, setConn] = useState("unknown");
-
-  useEffect(() => {
-    const update = () => {
-      setConn(ws.isConnected() ? "connected" : "disconnected");
-    };
-    update();
-
-    const unsub = ws.subscribe("system", (msg) => {
-      // if backend emits system pings, this would keep status fresh
-      update();
-    });
-
-    const timer = setInterval(update, 2000);
-    return () => {
-      unsub?.();
-      clearInterval(timer);
-    };
-  }, [ws]);
+  const conn = useUI((s) => s.connection) || "unknown";
 
   const themeLabel =
     theme === "system"

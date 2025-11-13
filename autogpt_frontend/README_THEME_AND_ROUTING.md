@@ -1,4 +1,4 @@
-# Routing, Theme, and Client Scaffolding
+# Routing, Theme, State, and Client Scaffolding
 
 This app uses:
 - react-router-dom v6 for client-side routing
@@ -6,6 +6,7 @@ This app uses:
 - Centralized configuration via env loader
 - Simple logger honoring REACT_APP_LOG_LEVEL
 - HTTP client wrapper and WebSocket client with auto-reconnect
+- Global state stores (settings, ui, tasks, runs) implemented via Context-based lightweight store
 - Placeholder AutoGPT API surface
 
 Key files:
@@ -14,7 +15,10 @@ Key files:
 - src/layouts/DashboardLayout.jsx — app shell with Sidebar + Topbar
 - src/components/common/* — Button, StatusPill, Sidebar, Topbar
 - src/App.js — route definitions and minimal health check preview
-- src/index.js — wraps app with ThemeProvider and BrowserRouter
+- src/state/AppProviders.jsx — wires ThemeProvider, Router, and initializes global state/flags
+- src/state/*Store.js — global slices: settings, ui, tasks, runs
+- src/state/createStore.js — tiny store helper (Context + useReducer)
+- src/index.js — uses AppProviders to wrap the app
 - src/lib/env.js — env loader/validator for REACT_APP_* variables
 - src/lib/logger.js — structured logger with level filtering and redaction
 - src/lib/httpClient.js — fetch wrapper with timeout/retry/backoff
@@ -26,7 +30,9 @@ Environment variables supported (see .env.example):
 - REACT_APP_BACKEND_URL, REACT_APP_API_BASE form API root (default http://localhost:8000 + /api)
 - REACT_APP_WS_URL for WebSocket connection (default ws://localhost:8000/ws)
 - REACT_APP_LOG_LEVEL one of trace|debug|info|warn|error|silent (default info)
-- Additional flags for healthcheck path, features, experiments.
+- REACT_APP_HEALTHCHECK_PATH custom health path
+- REACT_APP_FEATURE_FLAGS e.g. "newRuns=true,smartMode=false" or JSON string
+- REACT_APP_EXPERIMENTS_ENABLED boolean to enable experimental UI paths
 
 Quick start:
 1. cp .env.example .env
@@ -43,3 +49,6 @@ npm start
 Notes:
 - The API endpoints in src/api/autogpt.js are placeholders. Update paths to match your backend OpenAPI once available.
 - WebSocket topic names are also placeholders; align with backend protocol (e.g., run:<id>:logs).
+- Use the stores in components:
+  - import { useUI } from "src/state/uiStore"; const { toasts } = useUI();
+  - import { useRuns } from "src/state/runsStore"; runsStore.actionsFactory().subscribeRunLogs(id)

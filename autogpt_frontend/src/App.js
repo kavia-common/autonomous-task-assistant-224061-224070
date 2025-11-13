@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "./layouts/DashboardLayout";
 import "./App.css";
@@ -34,8 +34,8 @@ function Page({ title, description }) {
 
 function TasksPage() {
   const [preview, setPreview] = useState(null);
+  const env = useMemo(() => getEnv(), []);
   useEffect(() => {
-    const env = getEnv();
     const log = baseLogger;
     log.info("Environment loaded", { api: env.API_ROOT, ws: env.WS_URL });
 
@@ -49,7 +49,7 @@ function TasksPage() {
       .catch(() => {
         setPreview({ status: "unavailable" });
       });
-  }, []);
+  }, [env]);
 
   return (
     <div>
@@ -57,6 +57,10 @@ function TasksPage() {
       <div style={{ marginTop: 16, fontSize: 12, color: "var(--text-muted)" }}>
         Health preview:{" "}
         {preview ? (typeof preview.status === "number" ? `OK (${preview.status})` : "Unavailable") : "Checking..."}
+      </div>
+      <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
+        Experiments: {env.EXPERIMENTS_ENABLED ? "Enabled" : "Disabled"} | Flags:{" "}
+        {Object.keys(env.FEATURE_FLAGS || {}).length}
       </div>
     </div>
   );
